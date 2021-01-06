@@ -67,7 +67,10 @@ void loop() {
     byte angles[8];
 
     for (int i = 0; i < 8; i++) {
-        angles[i] = (byte)(min(1.0f, max(0.0f, sers[i]->get(mots[i]->obs_angular_displacement_) / pi * 0.5f + 0.5f)) * 255.0f + 0.5f);
+        float obs_angle = 0.0f;
+        sers[i]->get(mots[i]->obs_angular_displacement_, obs_angle);
+
+        angles[i] = (byte)(min(1.0f, max(0.0f, obs_angle / pi * 0.5f + 0.5f)) * 255.0f + 0.5f);
 
         float angle = (Serial.read() / 255.0f * 2.0f - 1.0f) * pi;
         float torque = Serial.read() / 255.0f;

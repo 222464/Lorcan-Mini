@@ -5,7 +5,7 @@ import time
 def main():
     imu = IMU()
 
-    frametime = 1.0 / 120.0
+    frametime = 1.0 / 60.0
 
     print("Ready.")
 
