@@ -13,6 +13,8 @@ def main():
         try:
             s = time.time()
 
+            imu.poll()
+
             print(imu.getLinearAccel())
 
             time.sleep(max(0, frametime - (time.time() - s)))

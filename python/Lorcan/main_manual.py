@@ -18,7 +18,7 @@ def main():
     controller = ManualController(iks)
 
     angles = 8 * [ 0.0 ]
-    kPs = 8 * [ 1.0 ]
+    kPs = 8 * [ 0.1 ]
 
     frametime = 1.0 / 60.0
 
@@ -40,7 +40,6 @@ def main():
                 print("Shutdown button (A) has been pressed, shutting down...")
                 break
 
-            #pad_x = gamepad.get_left_thumbstick_x()
             pad_y = gamepad.get_left_thumbstick_y()
 
             controller.step(pad_y, frametime)

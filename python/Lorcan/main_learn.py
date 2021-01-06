@@ -5,6 +5,8 @@ from imu import IMU
 from config import *
 import time
 
+import pyaogmaneo as pyaon
+
 def main():
     gamepad = Gamepad()
     motors = Motors()
@@ -45,6 +47,7 @@ def main():
 
             imuSDR = 6 * [ 0 ]
 
+            imu.poll()
             linearAccel = imu.getLinearAccel()
             gyro = imu.getGyro()
 
@@ -56,7 +59,7 @@ def main():
             imuSDR[4] = int(min(1.0, max(0.0, np.tanh(gyro[1] * gyroScale) * 0.5 + 0.5)) * (sensorRes - 1) + 0.5)
             imuSDR[5] = int(min(1.0, max(0.0, np.tanh(gyro[2] * gyroScale) * 0.5 + 0.5)) * (sensorRes - 1) + 0.5)
 
-            reward = linearAccel[2]
+            reward = linearAccel[1]
 
             h.step([ priopSDR, imuSDR, h.getPredictionCIs(2) ], True, reward, False)
 

@@ -8,6 +8,8 @@ const float offsets[] = { 0.32f, 0.32f, -0.61f, -0.61f, 0.68f, 0.93f, 0.0f, -0.3
 const float maxAngleKp = 36.0f;
 const float initTorque = 0.1f;
 
+const float maxAngle = pi / 3.0f;
+
 IqSerial ser1(Serial1);
 IqSerial ser2(Serial2);
 IqSerial ser3(Serial3);
@@ -75,15 +77,14 @@ void loop() {
         float angle = (Serial.read() / 255.0f * 2.0f - 1.0f) * pi;
         float torque = Serial.read() / 255.0f;
 
-        sers[i]->set(mots[i]->ctrl_angle_, offsets[i] + angle);
+        sers[i]->set(mots[i]->ctrl_angle_, offsets[i] + min(maxAngle, max(-maxAngle, angle)));
         sers[i]->set(mots[i]->angle_Kp_, maxAngleKp * torque);
     }
 
-    if (Serial.available() > 0)
+    while (Serial.available() > 0)
         Serial.read();
 
     // Write angles
-    Serial.write(angles, 8);
-     
-    delay(1);
+    if (Serial.availableForWrite() >= 8)
+        Serial.write(angles, 8);
 }
