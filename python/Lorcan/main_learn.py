@@ -22,6 +22,8 @@ def main():
 
     frametime = 1.0 / 60.0
 
+    bPressedPrev = False
+
     print("Ready.")
 
     while True:
@@ -39,6 +41,18 @@ def main():
             if gamepad.is_a_down():
                 print("Shutdown button (A) has been pressed, shutting down...")
                 break
+
+            bPressed = gamepad.is_b_down()
+
+            if bPressed and not bPressedPrev:
+                paused = not paused
+
+                if paused:
+                    print("Paused.")
+                else:
+                    print("Unpaused.")
+
+            bPressedPrev = bPressed
 
             priopSDR = 8 * [ 0 ]
 
@@ -61,7 +75,8 @@ def main():
 
             reward = linearAccel[1]
 
-            h.step([ priopSDR, imuSDR, h.getPredictionCIs(2) ], True, reward, False)
+            if not paused:
+                h.step([ priopSDR, imuSDR, h.getPredictionCIs(2) ], True, reward, False)
 
             # Determine angles and kPs
             for i in range(16):
