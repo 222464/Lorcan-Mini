@@ -26,10 +26,13 @@ class Motors:
         self.ser.write(bvalues)
 
     def readAngles(self):
-        while self.ser.available < 8:
+        while self.ser.in_waiting < 8:
             time.sleep(0.001)
 
-        bangles = self.ser.readall()[:8]
+        bangles = bytes()
+
+        while self.ser.in_waiting >= 8:
+            bangles = self.ser.read(8)
 
         self.angles = (np.array(list(bangles)) / 255.0 * 2.0 - 1.0) * np.pi
 

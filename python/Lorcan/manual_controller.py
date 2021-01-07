@@ -29,7 +29,7 @@ class ManualController:
         self.stepLenTimer1 = 0.0
         self.stepLenTime = 0.08
 
-        self.stepHeight = 28.0
+        self.stepHeight = 20.0
 
         self.minWalkRate = 0.1
 

@@ -20,9 +20,11 @@ def main():
     kPs = 8 * [ 1.0 ]
     current_angles = 8 * [ 0.0 ]
 
-    frametime = 1.0 / 60.0
+    frametime = 1.0 / 30.0
 
     bPressedPrev = False
+
+    paused = True
 
     print("Ready.")
 
@@ -76,14 +78,14 @@ def main():
             reward = linearAccel[1]
 
             if not paused:
-                h.step([ priopSDR, imuSDR, h.getPredictionCIs(2) ], True, reward, False)
+                h.step([ priopSDR, imuSDR, h.getPredictionCIs(2) ], False, reward, False)
 
-            # Determine angles and kPs
-            for i in range(16):
-                if i >= 8: # Kp
-                    kPs[i - 8] = h.getPredictionCIs(2)[i] / float(motorRes - 1)
-                else: # Angle
-                    angles[i] = (h.getPredictionCIs(2)[i] / float(motorRes - 1) * 2.0 - 1.0) * maxAngleRange
+                # Determine angles and kPs
+                for i in range(16):
+                    if i >= 8: # Kp
+                        kPs[i - 8] = h.getPredictionCIs(2)[i] / float(motorRes - 1)
+                    else: # Angle
+                        angles[i] = (h.getPredictionCIs(2)[i] / float(motorRes - 1) * 2.0 - 1.0) * maxAngleRange
 
             motors.sendCommands(angles, kPs)
 

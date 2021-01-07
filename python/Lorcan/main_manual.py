@@ -20,7 +20,7 @@ def main():
     angles = 8 * [ 0.0 ]
     kPs = 8 * [ 0.1 ]
 
-    frametime = 1.0 / 60.0
+    frametime = 1.0 / 30.0
 
     print("Ready.")
 

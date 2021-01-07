@@ -13,10 +13,10 @@ def main():
 
     lds = []
 
-    for i in range(2):
+    for i in range(3):
         ld = pyaon.LayerDesc()
 
-        ld.hiddenSize = (4, 4, 16)
+        ld.hiddenSize = (3, 3, 16)
         
         lds.append(ld)
 
@@ -38,7 +38,7 @@ def main():
     angles = 8 * [ 0.0 ]
     kPs = 8 * [ 1.0 ]
 
-    frametime = 1.0 / 120.0
+    frametime = 1.0 / 30.0
 
     print("Ready.")
 
@@ -63,17 +63,13 @@ def main():
             priopSDR = 8 * [ 0 ]
 
             for i in range(8):
-                priopSDR[i] = sensorRes // 2 # Train with perfect control
+                priopSDR[i] = np.random.randint(0, sensorRes) # Train with noise
 
             imuSDR = 6 * [ 0 ]
 
-            # Stationary IMU training
-            imuSDR[0] = sensorRes // 2
-            imuSDR[1] = sensorRes // 2
-            imuSDR[2] = sensorRes // 2
-            imuSDR[3] = sensorRes // 2
-            imuSDR[4] = sensorRes // 2
-            imuSDR[5] = sensorRes // 2
+            # Random IMU training
+            for i in range(6):
+                imuSDR[i] = np.random.randint(0, sensorRes)
 
             # Train with commands from manual controller
             motorSDR = 16 * [ 0 ]
