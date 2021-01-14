@@ -4,10 +4,21 @@ from motors import Motors
 from imu import IMU
 from config import *
 import time
+import os.path
 
 import pyaogmaneo as pyaon
 
+saveFileName = "lorcan_mini_rltrained.ohr"
+
 def main():
+    print("Controls:")
+    print("A - shutdown")
+    print("B - pause")
+    print("X - load")
+    print("Y - save")
+
+    print("Initializing...")
+
     gamepad = Gamepad()
     motors = Motors()
     imu = IMU()
@@ -23,6 +34,8 @@ def main():
     frametime = 1.0 / 30.0
 
     bPressedPrev = False
+    xPressedPrev = False
+    yPressedPrev = False
 
     paused = True
 
@@ -56,6 +69,32 @@ def main():
 
             bPressedPrev = bPressed
 
+            xPressed = gamepad.is_x_down()
+
+            if xPressed and not xPressedPrev:
+                if os.path.isfile(saveFileName):
+                    print("Loading...")
+
+                    h = pyaon.Hierarchy()
+                    h.initFromFile(saveFileName)
+
+                    print("Loaded.")
+                else:
+                    print("Save file not found.")
+
+            xPressedPrev = xPressed
+
+            yPressed = gamepad.is_y_down()
+
+            if yPressed and not yPressedPrev:
+                print("Saving...")
+
+                h.saveToFile(saveFileName)
+
+                print("Saved.")
+
+            yPressedPrev = yPressed
+
             priopSDR = 8 * [ 0 ]
 
             for i in range(8):
@@ -78,7 +117,7 @@ def main():
             reward = linearAccel[1]
 
             if not paused:
-                h.step([ priopSDR, imuSDR, h.getPredictionCIs(2) ], False, reward, False)
+                h.step([ priopSDR, imuSDR, h.getPredictionCIs(2) ], True, reward, False)
 
                 # Determine angles and kPs
                 for i in range(16):
