@@ -3,9 +3,11 @@ import socket
 import errno
 from collections import deque
 
+dev_name = "/dev/input/event1"
+
 class Gamepad:
     def __init__(self):
-        self.device = InputDevice("/dev/input/event0")
+        self.device = InputDevice(dev_name)
         self.event_queue = deque()
         self.a_button = False
         self.b_button = False
@@ -22,8 +24,6 @@ class Gamepad:
         self.x_clicked = False
         self.y_clicked = False
         self.r_clicked = False
-        self.thumbstick_max = 255.0
-        self.thumbstick_middle = self.thumbstick_max / 2.0
         self.left_thumbstick_x = 0.0
         self.left_thumbstick_y = 0.0
         self.right_thumbstick_x = 0.0
@@ -32,7 +32,7 @@ class Gamepad:
     # Returns False if failed to reconnect
     def reconnect(self):
         try:
-            self.device = InputDevice("/dev/input/event0")
+            self.device = InputDevice(dev_name)
         except:
             return False
         
@@ -51,8 +51,6 @@ class Gamepad:
         self.x_clicked = False
         self.y_clicked = False
         self.r_clicked = False
-        self.thumbstick_max = 255.0
-        self.thumbstick_middle = self.thumbstick_max / 2.0
         self.left_thumbstick_x = 0.0
         self.left_thumbstick_y = 0.0
         self.right_thumbstick_x = 0.0
@@ -62,11 +60,6 @@ class Gamepad:
     
     # Returns False if failed to get events (controller disconnected)
     def process_events(self):
-        self.a_button = False
-        self.b_button = False
-        self.x_button = False
-        self.y_button = False
-        self.r_button = False
         self.a_clicked = False
         self.b_clicked = False
         self.x_clicked = False
@@ -86,6 +79,7 @@ class Gamepad:
             # Buttons
             if event.type == ecodes.EV_KEY:
                 state = event.value == 1
+                #print(event.code)
                 if event.code == 304:
                     self.a_button = state
                 elif event.code == 305:
@@ -106,11 +100,15 @@ class Gamepad:
             elif event.type == ecodes.EV_ABS:
                 absolute_event = categorize(event)
                 typecode = ecodes.bytype[absolute_event.event.type][absolute_event.event.code]
-                value = (absolute_event.event.value - self.thumbstick_middle) / self.thumbstick_middle
+                value = absolute_event.event.value / 255.0 * 2.0 - 1.0#(absolute_event.event.value - self.thumbstick_middle) / self.thumbstick_middle
                 if typecode == "ABS_X":
                     self.left_thumbstick_x = value
                 elif typecode == "ABS_Y":
                     self.left_thumbstick_y = -value
+                #elif typecode == "ABS_RX":
+                #    self.right_thumbstick_x = value
+                #elif typecode == "ABS_RY":
+                #    self.right_thumbstick_y = -value
 
         if self.prev_a_button and not self.a_button:
             self.a_clicked = True
@@ -169,6 +167,14 @@ class Gamepad:
     def get_left_thumbstick_y(self):
         return self.left_thumbstick_y
     
+    # Returns -1.0 to 1.0
+    def get_right_thumbstick_x(self):
+        return self.right_thumbstick_x
+
+    # Returns -1.0 to 1.0
+    def get_right_thumbstick_y(self):
+        return self.right_thumbstick_y
+
     def print(self):
         print(self.device)
 

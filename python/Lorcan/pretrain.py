@@ -6,26 +6,29 @@ from manual_controller import ManualController
 from config import *
 import time
 
-import pyaogmaneo as pyaon
+import pyaogmaneo as neo
 
 def main():
-    pyaon.setNumThreads(8)
+    neo.setNumThreads(3)
 
     lds = []
 
-    for i in range(3):
-        ld = pyaon.LayerDesc()
+    for _ in range(4):
+        ld = neo.LayerDesc()
 
-        ld.hiddenSize = (3, 3, 16)
+        ld.hiddenSize = (4, 4, 16)
+
+        ld.ticksPerUpdate = 4
+        ld.temporalHorizon = 4
         
         lds.append(ld)
 
-    h = pyaon.Hierarchy()
+    h = neo.Hierarchy()
 
     h.initRandom([
-        pyaon.IODesc((2, 4, sensorRes), pyaon.none, 2, 2, 2, 32), # Priop
-        pyaon.IODesc((2, 3, sensorRes), pyaon.none, 2, 2, 2, 32), # IMU
-        pyaon.IODesc((4, 4, motorRes), pyaon.action, 2, 2, 2, 32) # Motor control
+        neo.IODesc((2, 4, sensorRes), neo.none, 2, 1, 32), # Priop
+        neo.IODesc((2, 3, sensorRes), neo.none, 1, 1, 32), # IMU
+        neo.IODesc((4, 4, motorRes), neo.action, 2, 1, 32) # Motor control
         ], lds)
 
     iks = []
@@ -37,8 +40,11 @@ def main():
 
     angles = 8 * [ 0.0 ]
     kPs = 8 * [ 1.0 ]
+    
+    frametime = 1.0 / 60.0
 
-    frametime = 1.0 / 30.0
+    highKp = 1.0
+    lowKp = 0.4
 
     print("Ready.")
 
@@ -52,7 +58,23 @@ def main():
 
             pad_y = 1.0
 
-            controller.step(pad_y, frametime)
+            controller.step(pad_y, 0.0, frametime)
+
+            kPs = 8 * [ highKp ]
+
+            if controller.stepping0:
+                kPs[legMap[0][0]] = lowKp
+                kPs[legMap[0][1]] = lowKp
+
+                kPs[legMap[2][0]] = lowKp
+                kPs[legMap[2][1]] = lowKp
+
+            if controller.stepping1:
+                kPs[legMap[1][0]] = lowKp
+                kPs[legMap[1][1]] = lowKp
+
+                kPs[legMap[3][0]] = lowKp
+                kPs[legMap[3][1]] = lowKp
 
             # Map IK leg results to motors
             for i in range(4):
@@ -92,7 +114,7 @@ def main():
             h.step([ priopSDR, imuSDR, motorSDR ], True, 0.0, True)
 
             # Show error rate occasionally
-            if errorTimer >= 1000:
+            if errorTimer >= 100:
                 errorTimer = 0
 
                 print("Error: " + str(averageError))
@@ -100,7 +122,7 @@ def main():
             errorTimer += 1
 
             # Save occasionally
-            if saveTimer >= 10000:
+            if saveTimer >= 3000:
                 saveTimer = 0
 
                 print("Saving...")
@@ -120,3 +142,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

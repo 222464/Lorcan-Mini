@@ -1,11 +1,12 @@
 import numpy as np
 import board
 import busio
+from adafruit_extended_bus import ExtendedI2C as I2C
 import adafruit_bno055
 
 class IMU:
     def __init__(self):
-        self.i2c = busio.I2C(board.SCL, board.SDA)
+        self.i2c = I2C(3)
         self.sensor = adafruit_bno055.BNO055_I2C(self.i2c)
 
         self.linear_acceleration = [ 0.0, 0.0, 0.0 ]

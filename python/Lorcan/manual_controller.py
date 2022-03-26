@@ -2,6 +2,10 @@ import numpy as np
 from ik import DeltaIK
 from copy import copy
 
+def stepFunc(x):
+    sx = np.sin(x * np.pi)
+    return np.square(sx)
+
 class ManualController:
     def __init__(self, iks):
         self.iks = iks
@@ -18,18 +22,18 @@ class ManualController:
             self.resetToPositions.append(np.array([ 0.0, -self.walkHeight ]))
         
         self.stepTimer = 0.0
-        self.stepTime = 0.25
+        self.stepTime = 0.2
 
         self.recenterStep = 0
         self.recenterSteps = 2
 
-        self.speed = 40.0
+        self.speed = 90.0
 
         self.stepLenTimer0 = 0.0
         self.stepLenTimer1 = 0.0
-        self.stepLenTime = 0.08
+        self.stepLenTime = 0.07
 
-        self.stepHeight = 20.0
+        self.stepHeight = 23.0
 
         self.minWalkRate = 0.1
 
@@ -41,7 +45,7 @@ class ManualController:
 
         self.walkRatePrev = 0.0
 
-    def step(self, walkRate, dt):
+    def step(self, walkRate, turnRate, dt):
         if self.stepTimer > self.stepTime:
             self.stepTimer = 0.0
 
@@ -83,15 +87,15 @@ class ManualController:
                     self.recenterStep -= 1
 
             self.targetPositions[0][0] = self.resetFromPositions[0][0] + (self.resetToPositions[0][0] - self.resetFromPositions[0][0]) * (self.stepLenTimer0 / self.stepLenTime)
-            self.targetPositions[0][1] = np.sin(self.stepLenTimer0 / self.stepLenTime * np.pi) * self.stepHeight - self.walkHeight
+            self.targetPositions[0][1] = stepFunc(self.stepLenTimer0 / self.stepLenTime) * self.stepHeight - self.walkHeight
 
             self.targetPositions[3][0] = self.resetFromPositions[3][0] + (self.resetToPositions[3][0] - self.resetFromPositions[3][0]) * (self.stepLenTimer0 / self.stepLenTime)
-            self.targetPositions[3][1] = np.sin(self.stepLenTimer0 / self.stepLenTime * np.pi) * self.stepHeight - self.walkHeight
+            self.targetPositions[3][1] = stepFunc(self.stepLenTimer0 / self.stepLenTime) * self.stepHeight - self.walkHeight
         else:
-            self.targetPositions[0][0] += -walkRate * dt * self.speed
+            self.targetPositions[0][0] += -walkRate * dt * self.speed * min(1.0, 1.0 - turnRate * 2.0)
             self.targetPositions[0][1] = -self.walkHeight
 
-            self.targetPositions[3][0] += -walkRate * dt * self.speed
+            self.targetPositions[3][0] += -walkRate * dt * self.speed * min(1.0, 1.0 + turnRate * 2.0)
             self.targetPositions[3][1] = -self.walkHeight
 
         if self.stepping1:
@@ -105,15 +109,15 @@ class ManualController:
                     self.recenterStep -= 1
 
             self.targetPositions[2][0] = self.resetFromPositions[2][0] + (self.resetToPositions[2][0] - self.resetFromPositions[2][0]) * (self.stepLenTimer1 / self.stepLenTime)
-            self.targetPositions[2][1] = np.sin(self.stepLenTimer1 / self.stepLenTime * np.pi) * self.stepHeight - self.walkHeight
+            self.targetPositions[2][1] = stepFunc(self.stepLenTimer1 / self.stepLenTime) * self.stepHeight - self.walkHeight
 
             self.targetPositions[1][0] = self.resetFromPositions[1][0] + (self.resetToPositions[1][0] - self.resetFromPositions[1][0]) * (self.stepLenTimer1 / self.stepLenTime)
-            self.targetPositions[1][1] = np.sin(self.stepLenTimer1 / self.stepLenTime * np.pi) * self.stepHeight - self.walkHeight
+            self.targetPositions[1][1] = stepFunc(self.stepLenTimer1 / self.stepLenTime) * self.stepHeight - self.walkHeight
         else:
-            self.targetPositions[2][0] += -walkRate * dt * self.speed
+            self.targetPositions[2][0] += -walkRate * dt * self.speed * min(1.0, 1.0 + turnRate * 2.0)
             self.targetPositions[2][1] = -self.walkHeight
 
-            self.targetPositions[1][0] += -walkRate * dt * self.speed
+            self.targetPositions[1][0] += -walkRate * dt * self.speed * min(1.0, 1.0 - turnRate * 2.0)
             self.targetPositions[1][1] = -self.walkHeight
 
         for i in range(4):
@@ -133,3 +137,13 @@ class ManualController:
                 self.stepLenTimer1 = 0.0
 
         self.walkRatePrev = walkRate
+
+    def reset(self):
+        self.stepTimer = 0.0
+        self.stepLenTimer0 = 0.0
+        self.stepLenTimer1 = 0.0
+        self.walkRatePrev = 0.0
+
+        for i in range(4):
+            self.targetPositions[i] = np.array([ 0.0, -self.walkHeight ])
+

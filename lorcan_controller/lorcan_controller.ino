@@ -5,8 +5,10 @@ const float pi = 3.141592f;
 // Callibration
 const float offsets[] = { 0.32f, 0.32f, -0.61f, -0.61f, 0.68f, 0.93f, 0.0f, -0.36f };
 
-const float maxAngleKp = 36.0f;
-const float initTorque = 0.1f;
+const float maxAngleKp = 50.0f;
+const float maxAngleKd = 0.1f;
+
+const float initTorque = 0.05f;
 
 const float maxAngle = pi / 3.0f;
 
@@ -57,6 +59,7 @@ void setup() {
         sers[i]->begin();
 
         sers[i]->set(mots[i]->angle_Kp_, maxAngleKp * initTorque);
+        sers[i]->set(mots[i]->angle_Kd_, maxAngleKd);
         sers[i]->set(mots[i]->ctrl_angle_, offsets[i]);
     }
 }

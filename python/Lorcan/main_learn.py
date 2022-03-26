@@ -6,7 +6,7 @@ from config import *
 import time
 import os.path
 
-import pyaogmaneo as pyaon
+import pyaogmaneo as neo
 
 saveFileName = "lorcan_mini_rltrained.ohr"
 
@@ -14,8 +14,8 @@ def main():
     print("Controls:")
     print("A - shutdown")
     print("B - pause")
-    print("X - load")
-    print("Y - save")
+    print("X - save")
+    print("Y - load")
 
     print("Initializing...")
 
@@ -23,21 +23,23 @@ def main():
     motors = Motors()
     imu = IMU()
 
-    h = pyaon.Hierarchy()
+    neo.setNumThreads(3)
+
+    h = neo.Hierarchy()
 
     h.initFromFile("lorcan_mini_pretrained.ohr")
 
     angles = 8 * [ 0.0 ]
-    kPs = 8 * [ 1.0 ]
+    kPs = 8 * [ 0.1 ]
     current_angles = 8 * [ 0.0 ]
 
-    frametime = 1.0 / 30.0
+    actionsExp = h.getPredictionCIs(1)
 
-    bPressedPrev = False
-    xPressedPrev = False
-    yPressedPrev = False
+    frametime = 1.0 / 60.0
 
     paused = True
+
+    epsilon = 0.0
 
     print("Ready.")
 
@@ -57,9 +59,7 @@ def main():
                 print("Shutdown button (A) has been pressed, shutting down...")
                 break
 
-            bPressed = gamepad.is_b_down()
-
-            if bPressed and not bPressedPrev:
+            if gamepad.is_b_clicked():
                 paused = not paused
 
                 if paused:
@@ -67,40 +67,25 @@ def main():
                 else:
                     print("Unpaused.")
 
-            bPressedPrev = bPressed
-
-            xPressed = gamepad.is_x_down()
-
-            if xPressed and not xPressedPrev:
+            if gamepad.is_y_clicked():
                 if os.path.isfile(saveFileName):
                     print("Loading...")
 
-                    h = pyaon.Hierarchy()
+                    h = neo.Hierarchy()
                     h.initFromFile(saveFileName)
 
                     print("Loaded.")
                 else:
                     print("Save file not found.")
 
-            xPressedPrev = xPressed
-
-            yPressed = gamepad.is_y_down()
-
-            if yPressed and not yPressedPrev:
+            if gamepad.is_x_clicked():
                 print("Saving...")
 
                 h.saveToFile(saveFileName)
 
                 print("Saved.")
 
-            yPressedPrev = yPressed
-
-            priopSDR = 8 * [ 0 ]
-
-            for i in range(8):
-                priopSDR[i] = int(min(1.0, max(0.0, (angles[i] - current_angles[i]) / maxAngleRange * 0.5 + 0.5)) * (sensorRes - 1) + 0.5)
-
-            imuSDR = 6 * [ 0 ]
+            imuSDR = 6 * [ sensorRes // 2 ]
 
             imu.poll()
             linearAccel = imu.getLinearAccel()
@@ -116,19 +101,28 @@ def main():
 
             reward = linearAccel[1]
 
+            if gamepad.is_r_down():
+                print(reward)
+
             if not paused:
-                h.step([ priopSDR, imuSDR, h.getPredictionCIs(2) ], True, reward, False)
+                h.step([ imuSDR, actionsExp ], True, reward)
+
+                actionsExp = h.getPredictionCIs(1)
+
+                #for i in range(len(actionsExp)):
+                #    if np.random.rand() < epsilon:
+                #        actionsExp[i] = np.random.randint(0, motorRes)
 
                 # Determine angles and kPs
                 for i in range(16):
                     if i >= 8: # Kp
-                        kPs[i - 8] = h.getPredictionCIs(2)[i] / float(motorRes - 1)
+                        kPs[i - 8] = actionsExp[i] / float(motorRes - 1)
                     else: # Angle
-                        angles[i] = (h.getPredictionCIs(2)[i] / float(motorRes - 1) * 2.0 - 1.0) * maxAngleRange
+                        angles[i] = (actionsExp[i] / float(motorRes - 1) * 2.0 - 1.0) * maxAngleRange
 
             motors.sendCommands(angles, kPs)
 
-            current_angles = motors.readAngles()
+            #current_angles = motors.readAngles()
 
             time.sleep(max(0, frametime - (time.time() - s)))
         except Exception as e:
